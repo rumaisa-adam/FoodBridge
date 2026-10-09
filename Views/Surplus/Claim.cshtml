@@ -1,0 +1,68 @@
+﻿@model FoodBridge.Models.FoodItem
+@{
+    ViewData["Title"] = "Claim Surplus";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow border-0 overflow-hidden rounded-4">
+            <div class="row g-0">
+                <!-- Left Column: Item Overview & Base64 Image -->
+                <div class="col-md-6 bg-light text-center p-4 d-flex flex-column justify-content-center border-end">
+                    <img src="@Model.ImageData" class="img-fluid rounded shadow-sm mb-3" style="max-height: 260px; object-fit: cover;" alt="@Model.ItemName" />
+                    <h3 class="fw-bold">@Model.ItemName</h3>
+                    <p class="text-muted mb-2">
+                        <i class="bi bi-geo-alt-fill text-danger me-1"></i>@(Model.Suburb?.Name ?? "N/A") | Storage: @(Model.Storage?.Name ?? "Ambient")
+                    </p>
+                    <p class="text-muted small mb-3">Quantity: <strong>@Model.Quantity</strong> | Best Before: <strong>@Model.BestBeforeDate.ToString("dd/MM/yyyy")</strong></p>
+
+                    <div class="alert alert-light border text-start small mb-0">
+                        <strong class="text-dark">Item Notes:</strong>
+                        <p class="mb-0 text-muted">@(string.IsNullOrWhiteSpace(Model.ItemNotes) ? "No notes provided." : Model.ItemNotes)</p>
+                    </div>
+                </div>
+
+                <!-- Right Column: User Claim Form (Requirement 2.4) -->
+                <div class="col-md-6 p-4 p-md-5">
+                    <h4 class="fw-bold text-dark mb-4">Your Details</h4>
+                    <form asp-action="ClaimNow" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="foodItemID" value="@Model.FoodItemId" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Full Name</label>
+                            @Html.DropDownList("claimedByUserID", (SelectList)ViewBag.Users, "-- Select Full Name --", new { @class = "form-select", @id = "claimUserDropdown", required = "required" })
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold">Phone Number (Read-only)</label>
+                            <input type="text" id="userPhoneNumber" class="form-control bg-light" readonly placeholder="Select a user to display phone..." />
+                        </div>
+
+                        <button type="submit" class="btn btn-warning text-dark fw-bold btn-lg w-100 shadow-sm">
+                            Claim Now!
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Requirement 2.4 / Topic 7: Auto-fetch phone number via jQuery AJAX
+        $(document).ready(function () {
+            $('#claimUserDropdown').change(function () {
+                var selectedUserID = $(this).val();
+                if (selectedUserID) {
+                    $.getJSON('/Surplus/GetUserPhoneNumber', { userID: selectedUserID }, function (data) {
+                        $('#userPhoneNumber').val(data.phoneNumber);
+                    });
+                } else {
+                    $('#userPhoneNumber').val('');
+                }
+            });
+        });
+    </script>
+}
